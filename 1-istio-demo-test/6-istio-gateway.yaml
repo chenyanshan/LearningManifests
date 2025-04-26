@@ -1,0 +1,17 @@
+---
+# See more at https://istio.io/docs/reference/config/networking/gateway/
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: myapp-test-gateway
+  namespace: istio-test
+spec:
+  selector:
+    istio: myapp-test-gateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - '*/*.test.com'

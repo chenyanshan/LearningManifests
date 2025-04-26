@@ -1,0 +1,18 @@
+---
+# See more at https://istio.io/docs/reference/config/networking/destination-rule/
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: myapp
+  namespace: istio-test
+spec:
+  host: myapp
+  subsets:
+  - name: appv1
+    labels:
+      app: myapp
+      version: v1
+  - name: appv2
+    labels:
+      app: myapp
+      version: v2

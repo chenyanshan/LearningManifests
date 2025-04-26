@@ -1,0 +1,16 @@
+---
+# https://kubernetes.io/docs/concepts/services-networking/service/
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp
+  namespace: istio-test
+spec:
+  selector:
+    app: myapp
+  type: ClusterIP
+  ports:
+  - name: myapp
+    protocol: TCP
+    port: 80
+    targetPort: 80

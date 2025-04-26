@@ -1,0 +1,24 @@
+---
+# See more at https://istio.io/docs/reference/config/networking/virtual-service/
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: myapp
+  namespace: istio-test
+spec:
+  hosts:
+  - myapp
+  - myapp.orvibo.com
+  gateways:
+  - myapp-test-gateway
+  http:
+  - route:
+    - destination:
+        host: myapp
+        subset: appv1
+      weight: 30
+    - destination:
+        host: myapp
+        subset: appv2
+      weight: 70
+        

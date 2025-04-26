@@ -1,0 +1,116 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: rollouts-app
+  namespace: default
+  labels:
+    app: rollouts-app
+spec:
+  selector:
+    matchLabels:
+      app: rollouts-app
+  replicas: 3 # 定义5个副本
+  strategy: # 定义升级策略
+    canary:
+      canaryService: rollouts-app-canary
+      stableService: rollouts-app-stable
+      trafficRouting:
+        nginx:
+          stableIngress: rollouts-app-stable
+      analysis:
+        templates:
+          - templateName: ingress-nginx-success-rate
+        startingStep: 1
+        args:
+         - name: service-name
+           value: "rollouts-app-stable"
+      steps:
+        - setWeight: 10
+        - pause: { duration: 5m }
+  revisionHistoryLimit: 2
+  template:
+    metadata:
+      labels:
+        app: rollouts-app
+    spec:
+      # initContainers:
+        # Init containers are exactly like regular containers, except:
+          # - Init containers always run to completion.
+          # - Each init container must complete successfully before the next one starts.
+      containers:
+      - name: rollouts-app
+        image: container-registry.tencentcloudcr.com/tools/argoproj-rollouts-demo:blue
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: http
+---
+# https://kubernetes.io/docs/concepts/services-networking/service/
+apiVersion: v1
+kind: Service
+metadata:
+  name: rollouts-app-canary
+  namespace: default
+spec:
+  selector:
+    app: rollouts-app
+  type: ClusterIP
+  ports:
+  - name: rollouts-app
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rollouts-app-stable
+  namespace: default
+spec:
+  selector:
+    app: rollouts-app
+  type: ClusterIP
+  ports:
+  - name: rollouts-app
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+---
+# https://kubernetes.io/docs/concepts/services-networking/ingress/
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rollouts-app-stable
+  namespace: default
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: rollouts-app.orvibo.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: rollouts-app-stable
+            port:
+              number: 8080
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: ingress-nginx-success-rate
+spec:
+  args:
+    - name: service-name
+  metrics:
+    - name: ingress-nginx-success-rate
+      interval: 6m
+      successCondition: result[0] >= 0.95
+      failureLimit: 1
+      provider:
+        prometheus:
+          address: http://prom-prometheus.monitoring:9090
+          query: |
+            sum(irate(nginx_ingress_controller_requests{canary=~".*",exported_service="{{args.service-name}}",status!~"5.."}[5m]))  /
+            sum(irate(nginx_ingress_controller_requests{canary=~".*",exported_service="{{args.service-name}}"}[5m]))

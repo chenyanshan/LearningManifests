@@ -1,0 +1,24 @@
+## 基础信息
+NAME                             TYPE           CLUSTER-IP       EXTERNAL-IP       PORT(S)                        AGE
+service/bookinfo-gateway-istio   LoadBalancer   172.16.44.178    111.230.161.107   15021:31967/TCP,80:30796/TCP   8d
+service/details                  ClusterIP      172.16.27.49     <none>            9080/TCP                       8d
+service/productpage              ClusterIP      172.16.77.216    <none>            9080/TCP                       8d
+service/ratings                  ClusterIP      172.16.23.237    <none>            9080/TCP                       8d
+service/reviews                  ClusterIP      172.16.120.138   <none>            9080/TCP                       8d
+
+NAME                                          READY   STATUS    RESTARTS   AGE
+pod/bookinfo-gateway-istio-7c54dd57fc-4xnb5   1/1     Running   0          11m
+pod/details-v1-7b5c865486-9lzxf               2/2     Running   0          11m
+pod/productpage-v1-68bccf9f46-gzt6x           2/2     Running   0          11m
+pod/ratings-v1-55b5947cf8-8f8zk               2/2     Running   0          11m
+pod/reviews-v1-66f8574644-9m699               2/2     Running   0          11m
+pod/reviews-v2-6dd77bf786-k66bs               2/2     Running   0          11m
+pod/reviews-v3-6778ddcfb-hls8g                2/2     Running   0          11m
+
+现在情况是，需要针对 reviews 进行版本流量控制。
+目标：
+1. 通过 istio gateway 引入流量。
+2. 通过 vs，dr 对流量 reviews 流量进行控制。
+3. 清理掉之前残余的 kubernetes gateway 和 httproute 规则。
+
+执行了 0-base-istio-gateway.yaml 后，reviewes route 到 v1, v2, v3。
