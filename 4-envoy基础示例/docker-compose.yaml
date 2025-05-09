@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  nginx1:
+    image: nginx:latest
+    container_name: nginx_server_1
+    volumes:
+      - ./nginx1:/usr/share/nginx/html:ro
+    networks:
+      envoy_network:
+        ipv4_address: 172.20.0.10 # 为 nginx1 分配静态 IP
+    # ports: # 不需要直接暴露 Nginx 端口，流量通过 Envoy
+    #   - "8081:80"
+
+  nginx2:
+    image: nginx:latest
+    container_name: nginx_server_2
+    volumes:
+      - ./nginx2:/usr/share/nginx/html:ro
+    networks:
+      envoy_network:
+        ipv4_address: 172.20.0.11 # 为 nginx2 分配静态 IP
+    # ports: # 不需要直接暴露 Nginx 端口，流量通过 Envoy
+    #   - "8082:80"
+
+  envoy:
+    image: envoyproxy/envoy:v1.29-latest # 建议使用具体的版本标签
+    container_name: envoy_proxy
+    volumes:
+      - ./envoy.yaml:/etc/envoy/envoy.yaml:ro
+    ports:
+      - "80:80" # Envoy 外部端口
+      - "9901:9901" # Envoy admin 端口
+    networks:
+      - envoy_network # Envoy 也连接到这个网络
+    depends_on:
+      - nginx1
+      - nginx2
+
+networks:
+  envoy_network:
+    driver: bridge
+    ipam: # IP Address Management
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16 # 定义网络的子网
+          # gateway: 172.20.0.1 # 可以选择性地指定网关

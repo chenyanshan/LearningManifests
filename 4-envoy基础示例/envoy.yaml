@@ -1,0 +1,61 @@
+static_resources:
+  listeners:
+  - name: listener_0
+    address:
+      socket_address: { address: 0.0.0.0, port_value: 80 }
+    filter_chains:
+    - filters:
+      - name: envoy.filters.network.http_connection_manager
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+          stat_prefix: ingress_http
+          codec_type: AUTO
+          route_config:
+            name: local_route
+            virtual_hosts:
+            - name: web_service_1
+              domains: ["*.hihihiai.com", "hihihiai.com"]
+              routes:
+              - match: { prefix: "/" }
+                route: { cluster: local_cluster }
+            - name: web_service_2
+              domains: ["*.test.com","test.com"]
+              routes:
+              - match: { prefix: "/test.html" }
+                route: { cluster: nginx_service_1 }
+              - match: { prefix: "/" }
+                redirect:
+                  host_redirect: "www.hihihiai.com"
+          http_filters:
+          - name: envoy.filters.http.router
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+  clusters:
+  - name: nginx_service_1
+    connect_timeout: 0.25s
+    type: LOGICAL_DNS # 或者 STRICT_DNS，具体取决于你的 Docker 网络配置
+    # envoy_api_type: STATIC # For older Envoy versions
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: nginx_service_1
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: nginx1 # Docker Compose 服务名
+                port_value: 80  # Nginx1 监听的端口
+  - name: local_cluster
+    connect_timeout: 0.25s
+    type: STATIC
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: local_cluster
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address: { address: 172.20.0.10, port_value: 80 }
+        - endpoint:
+            address:
+              socket_address: { address: 172.20.0.11, port_value: 80 }
