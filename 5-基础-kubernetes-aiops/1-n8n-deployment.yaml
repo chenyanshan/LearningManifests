@@ -1,0 +1,106 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: n8n-data
+  namespace: aiops
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi # 根据需要调整存储大小
+  storageClassName: cbs
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: n8n-deployment
+  namespace: aiops
+  labels:
+    app: n8n
+spec:
+  replicas: 1 # 根据需要调整副本数量以进行扩展
+  selector:
+    matchLabels:
+      app: n8n
+  template:
+    metadata:
+      labels:
+        app: n8n
+    spec:
+      securityContext:
+        fsGroup: 1000
+      containers:
+        - name: n8n
+          image: container-registry.tencentcloudcr.com/tools/n8n:1.91.3
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 5678
+          volumeMounts:
+            - name: n8n-storage
+              mountPath: /home/node/.n8n # n8n 的数据目录
+          resources: # 根据您的需求和集群容量调整请求和限制
+            requests:
+              memory: "2Mi"
+              cpu: "1m"
+            limits:
+              memory: "6Gi"
+              cpu: "3" # CPU核心数
+          livenessProbe:
+            httpGet:
+              path: /healthz # n8n 健康检查端点
+              port: 5678
+            initialDelaySeconds: 60 # 启动后多久开始探测
+            periodSeconds: 15    # 探测频率
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 5678
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: n8n-storage
+          persistentVolumeClaim:
+            claimName: n8n-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: n8n-service
+  namespace: aiops
+spec:
+  type: ClusterIP # 外部访问请考虑使用 LoadBalancer, NodePort 或 Ingress
+  selector:
+    app: n8n # 确保这与 Deployment template labels 匹配
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80 # Service 监听的端口
+      targetPort: 5678 # n8n 容器监听的端口 (N8N_PORT)
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: n8n
+  namespace: aiops
+  labels:
+    name: n8n
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: kubernetes-n8n.orvibo.com
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: n8n-service
+            port: 
+              number: 80

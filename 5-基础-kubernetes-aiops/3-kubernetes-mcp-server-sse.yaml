@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubernetes-mcp-server-deployment
+  namespace: aiops
+  labels:
+    app: kubernetes-mcp-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kubernetes-mcp-server
+  template:
+    metadata:
+      labels:
+        app: kubernetes-mcp-server
+    spec:
+      serviceAccountName: kubernetes-mcp-server-sa
+      containers:
+      - name: kubernetes-mcp-server
+        image: container-registry.tencentcloudcr.com/tools/kubernetes-mcp-server:0.0.30
+        ports:
+        - containerPort: 8080 # 与 sse-port 一致
+          name: sse
+        resources:
+          limits:
+            cpu: "1024m"
+            memory: "1024Mi"
+          requests:
+            cpu: "1024m"
+            memory: "1024Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubernetes-mcp-server
+  namespace: aiops
+spec:
+  selector:
+    app: kubernetes-mcp-server
+  ports:
+  - port: 8080
+    targetPort: 8080

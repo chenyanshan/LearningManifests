@@ -1,0 +1,8 @@
+1. clone kubernetes mcp 仓库
+$ git clone https://github.com/manusa/kubernetes-mcp-server.git
+2. 编译镜像
+$ sudo docker build -t container-registry.tencentcloudcr.com/tools/kubernetes-mcp-server:0.0.30 .
+3. push 镜像
+$ sudo docker push container-registry.tencentcloudcr.com/tools/kubernetes-mcp-server:0.0.30
+
+
