@@ -1,0 +1,15 @@
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: nginx
+  namespace: istio-test
+spec:
+  # hosts 字段定义了此 VirtualService 将应用于哪些虚拟主机。
+  # 这通常是客户端用来访问服务的地址。
+  hosts:
+  - nginx
+  http:
+  - route:
+    - destination:
+        host: nginx

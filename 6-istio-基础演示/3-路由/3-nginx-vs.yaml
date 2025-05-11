@@ -1,0 +1,29 @@
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: nginx
+  namespace: istio-test
+spec:
+  hosts:
+  - nginx
+  http:
+  - match: # 规则1: 匹配特定头部
+    - headers:
+        user-agent:
+          regex: ".*Mobile.*"
+    route:
+    - destination:
+        host: nginx
+        subset: appv2
+  - match: # 规则2: 路径匹配
+    - uri:
+        prefix: "/test.html"
+    route:
+    - destination:
+        host: nginx
+        subset: appv2
+  - route:
+    - destination:
+        host: nginx
+        subset: appv1

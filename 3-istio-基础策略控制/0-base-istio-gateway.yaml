@@ -14,7 +14,7 @@ spec:
       name: http
       protocol: HTTP
     hosts:
-    - "bookinfo.orvibo.com"
+    - "bookinfo.hihihiai.com"
 ---
 apiVersion: networking.istio.io/v1
 kind: VirtualService
@@ -23,7 +23,7 @@ metadata:
   namespace: istio
 spec:
   hosts:
-  - "bookinfo.orvibo.com"
+  - "bookinfo.hihihiai.com"
   gateways:
   - bookinfo-gateway
   http:

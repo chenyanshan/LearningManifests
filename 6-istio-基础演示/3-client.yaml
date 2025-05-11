@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: client
+  namespace: istio-test
+spec:
+  containers:
+  - name: client
+    image: alpine:latest
+    command: ["tail"]
+    args: ["-f", "/dev/null"]

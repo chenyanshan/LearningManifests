@@ -94,7 +94,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: kubernetes-n8n.orvibo.com
+  - host: kubernetes-n8n.hihihiai.com
     http:
       paths:
       - pathType: Prefix

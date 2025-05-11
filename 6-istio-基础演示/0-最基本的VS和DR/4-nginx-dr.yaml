@@ -1,0 +1,12 @@
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: nginx
+  namespace: istio-test
+spec:
+  # host 字段指定了此 DestinationRule 将应用于哪个服务。
+  # 通常这是 Kubernetes 服务的 FQDN 。
+  # 格式为: <service-name>.<namespace>.svc.cluster.local
+  # 或者，如果 DestinationRule 与服务在同一个命名空间，可以直接使用服务名：<service-name>
+  host: nginx

@@ -63,7 +63,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: rollouts-app.orvibo.com
+  - host: rollouts-app.hihihiai.com
     http:
       paths:
       - path: /
