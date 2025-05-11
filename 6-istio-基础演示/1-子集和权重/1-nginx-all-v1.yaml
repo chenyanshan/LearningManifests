@@ -6,16 +6,9 @@ metadata:
   namespace: istio-test
 spec:
   hosts:
-  - "nginx.hihihiai.com"
-  gateways:
-  - bookinfo-gateway
+  - nginx
   http:
   - route:
     - destination:
         host: nginx
         subset: appv1
-      weight: 30
-    - destination:
-        host: nginx
-        subset: appv2
-      weight: 70

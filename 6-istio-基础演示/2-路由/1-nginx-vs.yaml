@@ -10,8 +10,8 @@ spec:
   http:
   - match: # 规则1: 匹配特定头部
     - headers:
-        user-agent:
-          regex: ".*Mobile.*"
+        test:
+          regex: "true"
     route:
     - destination:
         host: nginx
@@ -23,7 +23,7 @@ spec:
     - destination:
         host: nginx
         subset: appv2
-  - route:
+  - route:  # 默认给 v1
     - destination:
         host: nginx
         subset: appv1
