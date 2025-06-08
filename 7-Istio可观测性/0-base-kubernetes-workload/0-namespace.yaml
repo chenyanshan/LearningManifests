@@ -1,0 +1,7 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: istio
+  labels:
+    istio-injection: enabled   # 开启 istio sidecar 注入

@@ -8,6 +8,9 @@ topology:
         kind: linux
         image: nicolaka/netshoot
         exec:
+        - sysctl -w net.ipv6.conf.all.disable_ipv6=1
+        - sysctl -w net.ipv6.conf.default.disable_ipv6=1
+        - sysctl -w net.ipv6.conf.lo.disable_ipv6=1
         - sysctl -w net.ipv4.ip_forward=1
         - ip addr add 192.168.0.100/24 dev eth1
         - ip link set eth1 up
@@ -19,10 +22,16 @@ topology:
     host1:
         kind: linux
         image: nicolaka/netshoot
+        network-mode: none
         exec:
+        - sysctl -w net.ipv6.conf.all.disable_ipv6=1
+        - sysctl -w net.ipv6.conf.default.disable_ipv6=1
+        - sysctl -w net.ipv6.conf.lo.disable_ipv6=1
         # 1. 在宿主机上开启IP转发。
         - sysctl -w net.ipv4.ip_forward=1
         # ⭐️ 新增：开启ARP代理功能，允许为其他接口上的IP进行ARP应答。
+        # 如果没有这个，当 ARP 报文被解开的时候，报文位于宿主机上面。
+        # 然后宿主机就会将其丢弃。
         - sysctl -w net.ipv4.conf.all.proxy_arp=1
         - ip addr add 10.0.1.2/24 dev eth1
         - ip link set eth1 up
@@ -48,7 +57,11 @@ topology:
     pod1:
         kind: linux
         image: nicolaka/netshoot
+        network-mode: none
         exec:
+        - sysctl -w net.ipv6.conf.all.disable_ipv6=1
+        - sysctl -w net.ipv6.conf.default.disable_ipv6=1
+        - sysctl -w net.ipv6.conf.lo.disable_ipv6=1
         - ip addr add 172.16.0.2/24 dev eth1
         - ip link set eth1 up
         - ip route replace default via 172.16.0.1 dev eth1
@@ -57,6 +70,9 @@ topology:
         kind: linux
         image: nicolaka/netshoot
         exec:
+        - sysctl -w net.ipv6.conf.all.disable_ipv6=1
+        - sysctl -w net.ipv6.conf.default.disable_ipv6=1
+        - sysctl -w net.ipv6.conf.lo.disable_ipv6=1
         - sysctl -w net.ipv4.ip_forward=1
         - ip addr add 192.168.0.200/24 dev eth1
         - ip link set eth1 up
@@ -68,7 +84,11 @@ topology:
     host2:
         kind: linux
         image: nicolaka/netshoot
+        network-mode: none
         exec:
+        - sysctl -w net.ipv6.conf.all.disable_ipv6=1
+        - sysctl -w net.ipv6.conf.default.disable_ipv6=1
+        - sysctl -w net.ipv6.conf.lo.disable_ipv6=1
         # 1. 在宿主机上开启IP转发。
         - sysctl -w net.ipv4.ip_forward=1
         # ⭐️ 新增：开启ARP代理功能。
@@ -97,7 +117,11 @@ topology:
     pod2:
         kind: linux
         image: nicolaka/netshoot
+        network-mode: none
         exec:
+        - sysctl -w net.ipv6.conf.all.disable_ipv6=1
+        - sysctl -w net.ipv6.conf.default.disable_ipv6=1
+        - sysctl -w net.ipv6.conf.lo.disable_ipv6=1
         - ip addr add 172.16.1.2/24 dev eth1
         - ip link set eth1 up
         - ip route replace default via 172.16.1.1 dev eth1
@@ -116,3 +140,22 @@ echo "--- Destroying any existing lab: simple-vxlan-lab ---"
 sudo clab destroy -t clab.yaml --cleanup
 echo "--- Deploying lab: simple-vxlan-lab ---"
 sudo clab deploy -t clab.yaml
+
+
+
+# Pod1 -> Pod2 全流程。
+# 1. Pod -> CNI0 忽略。
+# 2. Pod1 to Pod2 ICMP 报文 -> CNI0 -> host1网络协议栈。
+# 3. Host1 查看目标是 172.16.1.0/24 ，就把报文丢给了 flannel.1 网卡。
+# 4. flannel.1 不知道 172.16.1.2 是谁，就通过 ARP 报文进行广播。源 mac 为 flannel.1 mac 。
+# 5. ARP 报文通过 fdb 中配置，发送给了【其他】vxlan 节点。（这里没有其他节点）
+# 5. host2 收到了 vxlan 报文，送给了 flannel.1 解开报文。
+# 6. host2 从 flannel.1 收到谁是 172.16.1.2 ARP 报文。
+# 因为其开启了 ARP proxy，所以它知道 172.16.1.2 它能转发到达。所以 host2 通过 flannel.1 响应了 ARP 报文。
+# 7. host1 收到了响应报文，172.16.1.2 的 mac 是 host2 flannel.1 的 mac 。
+# 8. 最终 flannel.1 封装了报文发出： 
+# 最里层：ICMP request
+# 封装： SrcIP:Pod1IP, DstIP: Pod2IP, SrcMac: Host1FlannelMac, DstMac: Host2FlannelMac
+# Vxlan 封装: Host1 -> Host2:4789
+# 9. Host2 收到报文，转给 flannel 解开，然后发现 DstIP 为 Pod2IP， 通过路由转发给了 Pod2 。
+# 10. Pod2 以同样路径把 ICMP Reply 返回给了 Pod1 

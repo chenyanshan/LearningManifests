@@ -1,0 +1,17 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: all-annotated-pods-in-istio # 已重命名以更清晰
+  namespace: monitoring # PodMonitor CRD 部署的命名空间
+  labels:
+    release: prometheus-stack # 确保这个标签能被您的 Prometheus podMonitorSelector 选中
+spec:
+  namespaceSelector:
+    matchNames:
+      - "istio" # 目标 Pod 所在的命名空间
+  selector: {} # 选择 "istio" 命名空间中的所有 Pod
+               # Prometheus 后续会根据注解 prometheus.io/scrape="true" 过滤
+  podMetricsEndpoints:
+  - port: "15020" # 假设这是 Istio sidecar 指标的标准注解端口
+    path: "/stats/prometheus" # 假设这是 Istio sidecar 指标的标准注解路径
+    interval: 15s # 可选

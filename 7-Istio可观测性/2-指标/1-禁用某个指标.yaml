@@ -1,0 +1,14 @@
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: mesh-global-settings
+  namespace: istio-system
+spec:
+  # 没有 selector，应用于网格中的所有 workload
+  metrics:
+  - providers:
+    - name: prometheus
+    overrides:
+    - match:
+        metric: REQUEST_SIZE
+      disabled: true # 默认禁用请求大小指标
