@@ -46,8 +46,6 @@ topology:
 
         # 4. 添加到对端Pod子网的路由。
         #- ip addr add 172.16.0.0/32 dev flannel.1
-        #- ip route add 172.16.1.0/24 via 172.16.1.0 dev flannel.1 onlink
-
         - ip route add 172.16.1.0/24 via 172.16.1.1 dev flannel.1 onlink
 
         # 5. 添加静态FDB条目，用于引导广播（如初始ARP请求）。
@@ -107,8 +105,6 @@ topology:
 
         # 4. 添加到对端Pod子网的路由。
         #- ip addr add 172.16.1.0/32 dev flannel.1
-        #- ip route add 172.16.0.0/24 via 172.16.0.0 dev flannel.1 onlink
-
         - ip route add 172.16.0.0/24 via 172.16.0.1 dev flannel.1 onlink
 
         # 5. 添加指向另一台宿主机的静态FDB条目。
